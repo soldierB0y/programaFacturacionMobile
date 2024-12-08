@@ -1,0 +1,12 @@
+
+
+#tbxPass::-ms-reveal
+{
+    display: none;
+}
+
+#tbxPass, #tbxUsuario
+{
+    outline:none;
+
+}
