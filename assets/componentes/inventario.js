@@ -97,7 +97,7 @@ export const Inventario = ({navigation}) => {
           </Pressable>
 
           <Pressable style={styles.buttonSave}
-            onPress={()=>{navigation.navigate('RegistrosInventario')
+            onPress={()=>{navigation.navigate('RegistroOrdenes')
                 
             }}
           >

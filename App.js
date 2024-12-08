@@ -9,6 +9,7 @@ import {NavigationContainer, TabActions, TabRouter} from '@react-navigation/nati
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import styles  from './assets/css/styles';
 import { Inicio } from './assets/componentes/inicio';
+import {ListaClientes, NuevoCliente} from './assets/componentes/clientes'
 import { Clientes } from './assets/componentes/clientes';
 export default function App() {
   const stack= createNativeStackNavigator();
@@ -41,6 +42,7 @@ export default function App() {
            <stack.Screen
            name='Clientes'
            component={Clientes}></stack.Screen>
+
         </stack.Navigator>
       </NavigationContainer>
     </>

@@ -107,6 +107,7 @@ export  const Inicio= ({navigation})=>{
     )
 }
 
+
 const styles= StyleSheet.create({
 
     bellButton:{
@@ -114,7 +115,7 @@ const styles= StyleSheet.create({
         borderWidth:2,
         borderColor:'black',
         borderRadius:18,
-        position:'static',
+        position:'relative',
         zIndex:1000
     },
     bellContainer:{
