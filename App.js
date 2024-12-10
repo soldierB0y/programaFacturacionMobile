@@ -8,7 +8,7 @@ import {Inventario,RegistrosInventario} from './assets/componentes/inventario';
 import {NavigationContainer, TabActions, TabRouter} from '@react-navigation/native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import styles  from './assets/css/styles';
-import { Inicio } from './assets/componentes/inicio';
+import { Menu } from './assets/componentes/inicio';
 import {ListaClientes, NuevoCliente} from './assets/componentes/clientes'
 import { Clientes } from './assets/componentes/clientes';
 export default function App() {
@@ -18,6 +18,12 @@ export default function App() {
       <StatusBar style='light' backgroundColor='black'/>
       <NavigationContainer>
         <stack.Navigator>
+
+        <stack.Screen
+            name='Inicio'
+            component={Menu}
+            options={{headerShown:false}}
+           />
           <stack.Screen
             name='Login'
             component={Login}
@@ -34,11 +40,7 @@ export default function App() {
            component={RegistrosInventario}
            options={{title:'Registro Ordenes de Compra'}}
            />
-          <stack.Screen
-            name='Inicio'
-            component={Inicio}
-            options={{headerShown:false}}
-           />
+
            <stack.Screen
            name='Clientes'
            component={Clientes}></stack.Screen>

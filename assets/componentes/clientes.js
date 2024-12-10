@@ -3,6 +3,7 @@ import { Text,ScrollView,View,StyleSheet, Pressable,Image,TextInput} from "react
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from "react-native-responsive-screen"
 import { createMaterialTopTabNavigator } from "@react-navigation/material-top-tabs"
 import SelectDropdown from "react-native-select-dropdown"
+import DropDownPicker from "react-native-dropdown-picker"
 
 
 
@@ -46,7 +47,11 @@ export const ListaClientes= ()=>{
 
 
 export const NuevoCliente= ()=>{
-    const sexo= [{title:'masculino'},{title:'femenino'}]
+    const [item,setItem]= useState([{label:'masculino',value:'masculino'},{label:'femenino',value:'femenino'},{label:'prefiero no responder',value:null}])
+    const [open, setOpen]= useState(false);
+    const [value, setValue]= useState(null);
+
+
     return(
         <>
             <View style={styles.container}>
@@ -56,7 +61,19 @@ export const NuevoCliente= ()=>{
                     {/*Usar un selectDropDown para el sexo desinstalar 
                     el paquete que tengo para eso
                      actualmente, no funciona correctamente */}
-                    <Text style={styles.input}>sexo</Text>
+                    <DropDownPicker
+                        open={open}
+                        value={value}
+                        items={item}
+                        setOpen={setOpen}
+                        setValue={setValue}
+                        setItems={setItem}
+                        placeholder="genero"
+                        style={{backgroundColor:'whiteSmoke'}}
+
+
+                    >
+                    </DropDownPicker>
                     <TextInput style={styles.input} placeholder="direccion"></TextInput>
                     <TextInput style={styles.input} keyboardType="numeric" placeholder="telefono"></TextInput>
                     <TextInput style={styles.input} placeholder="correo"></TextInput>

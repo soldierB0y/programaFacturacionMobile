@@ -262,7 +262,8 @@ const styles = StyleSheet.create({
     padding: 10,
     borderRadius: 5,
     alignItems: "center",
-    width:wp('90%')
+    width:wp('90%'),
+    alignSelf:'center'
   },
   buttonText: {
     color: "white",
@@ -273,6 +274,8 @@ const styles = StyleSheet.create({
     padding: 10,
     borderRadius: 5,
     alignItems: "center",
+    width:wp('90%'),
+    alignSelf:'center'
   },
 });
 
