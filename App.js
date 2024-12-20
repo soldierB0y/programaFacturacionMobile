@@ -11,6 +11,7 @@ import { Menu } from './assets/componentes/inicio';
 import {ListaClientes, NuevoCliente} from './assets/componentes/clientes'
 import { Clientes } from './assets/componentes/clientes';
 import {Login} from './assets/componentes/login.js'
+import '@expo/metro-runtime'
 
 
 
@@ -23,17 +24,21 @@ export default function App() {
         <stack.Navigator>
 
 
+
+        <stack.Screen
+            name='Inicio'
+            component={Menu}
+            options={{headerShown:false}}
+           />
+
+
         <stack.Screen
             name='Login'
             component={Login}
             options={{headerShown:false}}
           
           />
-        <stack.Screen
-            name='Inicio'
-            component={Menu}
-            options={{headerShown:false}}
-           />
+
 
           <stack.Screen
             name='Inventario'

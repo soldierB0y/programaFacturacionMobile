@@ -12,7 +12,9 @@ import { FacturaPrincipal } from "./facturas";
 const Drawer= createDrawerNavigator();
 
 
-export  const Menu= ()=>{
+export  const Menu= ({navigation})=>{
+
+    navigation.navigate('Clientes')
 
     return(
         <>
