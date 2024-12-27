@@ -2,12 +2,9 @@ import { useEffect, useState } from "react"
 import { Text,ScrollView,View,StyleSheet, Pressable,Image,TextInput, Modal} from "react-native"
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from "react-native-responsive-screen"
 import { createMaterialTopTabNavigator } from "@react-navigation/material-top-tabs"
-import SelectDropdown from "react-native-select-dropdown"
 import DropDownPicker from "react-native-dropdown-picker"
-import { SearchBar } from "react-native-screens"
-import { stylesTables } from "../css/styleTable"
-
-
+import { stylesTables } from "../css/styleTable";
+import { Animated, Easing } from "react-native";
 
 //URL de la api
 const urlApi='http://localhost:8000/'
@@ -22,25 +19,27 @@ export const Clientes = ({navigation})=>{
             <Tap.Navigator>
                 <Tap.Screen
                  name="ListaClientes"
-                 component={ListaClientes}
-                 options={{title:'Listado'}}
-                 initialParams={
-                    {render:render}
-                 }
-
-                 ></Tap.Screen>
+                 options={{title:'Listado'}}>
+                    {
+                        (props)=>(
+                            <ListaClientes {...props} renderizado={render} ></ListaClientes>
+                        )
+                    }
+                 </Tap.Screen>
 
                  <Tap.Screen
                  name="NuevoCliente"
-                 component={NuevoCliente}
                  options={
                     {
                         title:'Nuevo'
-                 }}
-                 initialParams={
-                    {setRender:setRender}
-                 }
-                 >  
+                 }}>  
+
+                    {
+                        (props)=>(
+                            <NuevoCliente {...props} setRenderizado={setRender} ></NuevoCliente>
+                        )
+                    }
+
                  </Tap.Screen>
                  <Tap.Screen
                     name="EditarCliente"
@@ -60,9 +59,35 @@ export const Clientes = ({navigation})=>{
 }
 
 //Listado de clientes
-export const ListaClientes= ({navigation,route})=>{
+export const ListaClientes= ({navigation,renderizado})=>{
 
-    const [render,setRender]= route.params;
+    
+      
+
+    const[searchValue, setSearchValue]= useState(null);
+    const [listaClientes,setListaclientes]= useState([{}]);
+    const [selectedID,setSelectedID]= useState(null);
+    const [modalVisible,setModalVisible]=useState(false);
+    const [render,setRender]=useState(false);
+    const [apartadoEliminarRegistro,setApartadoEliminarRegistro]=useState('flex')
+    const [apartadoEnviadoExitosamente,setApartadoEliminadoExitosamente]= useState('none')
+    const [apartadoEliminadoFallo,setApartadoEliminadoFallo]= useState('none')
+    const [apartadoCargando, setApartadoCargando]=useState('none')
+    //animacion de carga
+    const animacionLoading =new Animated.Value(0)
+
+    Animated.loop(
+        Animated.timing(animacionLoading, {
+            toValue: 1,
+            duration: 1500,
+            easing: Easing.linear,
+        })
+    ).start()
+
+        const rotacion = animacionLoading.interpolate({
+            inputRange: [0, 1],
+            outputRange: ["0deg", "360deg"], // Rotación completa
+        })
     //solicitud de los datos
     const  getClientes = async ()=>
         { 
@@ -71,22 +96,79 @@ export const ListaClientes= ({navigation,route})=>{
                 return await value;
                 
             } catch (error) {
-                console.log('Error:'+error)
-
+                console.log('Error:'+error);
+                return [{}];
             }
 
         }
 
-        useEffect(()=>{
+    const eliminarCliente= async (IDCliente)=>{
+        if(IDCliente !=undefined && IDCliente !=null)
+        {
+            setApartadoCargando('flex');
+            setApartadoEliminadoExitosamente('none');
+            setApartadoEliminadoFallo('none');
+            setApartadoEliminarRegistro('none');
+            
+            const value= await fetch(urlApi+'clientes',
+                {
+                    method:'DELETE',
+                    body: JSON.stringify(
+                        {
+                            IDCliente:IDCliente
+                        }
+                    ),
+                    headers:{'Content-Type':'application/json'}
+                }
+            ).then(
+                
+                res=>{
+
+                    setApartadoCargando('none')
+
+                    if(res.ok)
+                    {
+                        setApartadoEliminarRegistro('none');
+                        setApartadoEliminadoExitosamente('flex');
+                        setTimeout(() => {
+                                setApartadoEliminadoExitosamente('none');
+                                setModalVisible(false);
+                                setApartadoEliminarRegistro('flex');
+                        }, 1500);
+
+                        setRender(x=>!x)
+                    }
+                    else
+                    {
+                        setApartadoEliminadoExitosamente('none');
+                        setApartadoEliminarRegistro('none')
+                        setApartadoEliminadoFallo('flex');
+                        setTimeout(() => {
+                            setApartadoEliminadoFallo('none');
+                            setModalVisible(false);
+                            setApartadoEliminarRegistro('flex');
+                        }, 3000);
+                    }
+                }
+            ).catch(
+                error=>{
+                    
+                    setApartadoCargando('none')
+                    console.log(error)
+                    setApartadoEliminadoExitosamente('none');
+                    setApartadoEliminarRegistro('none');
+                    setApartadoEliminadoFallo('flex');
+                    setTimeout(() => {
+                        setModalVisible(false)
+                        setApartadoEliminarRegistro('flex');
+                        setApartadoEliminadoFallo('none');
+                    }, 2500);
+                }
+            )
+        }
+    }
 
 
-        },[render])
-      
-
-    const[searchValue, setSearchValue]= useState(null);
-    const [listaClientes,setListaclientes]= useState([{}]);
-    const [selectedID,setSelectedID]= useState(null);
-    const [modalVisible,setModalVisible]=useState(false);
 
     
     useEffect(() => {
@@ -95,7 +177,7 @@ export const ListaClientes= ({navigation,route})=>{
             console.log(clientes);  // Solo loguear los datos obtenidos
             setListaclientes(clientes);  // Usar setListaclientes para actualizar el estado
         })();
-    }, []);
+    }, [renderizado,render]);
     
     
     useEffect(()=>{
@@ -132,8 +214,8 @@ export const ListaClientes= ({navigation,route})=>{
                             }}
                         >
                             <View style={[stylesTables.contenedorTablaLinea,{backgroundColor: selectedID==item.IDCliente? '#ccc':'white'}]} key={item.IDCliente}>
-                                <Text style={[stylesTables.styleColumna,{color: selectedID==item.IDCliente? 'white':'black'}]}>{item.IDCliente}</Text>
-                                <Text style={[stylesTables.styleColumna,{color: selectedID==item.IDCliente? 'white':'black'}]}>{item.nombreRepresentante}</Text>
+                                <Text style={[stylesTables.styleColumna,{color: selectedID==item.IDCliente? 'white':'black',userSelect:'none'}]}>{item.IDCliente}</Text>
+                                <Text style={[stylesTables.styleColumna,{color: selectedID==item.IDCliente? 'white':'black',userSelect:'none'}]}>{item.nombreRepresentante}</Text>
                             </View>
                         </Pressable>
 
@@ -153,17 +235,47 @@ export const ListaClientes= ({navigation,route})=>{
                     ><Text style={styles.textoBoton}>Editar</Text></Pressable>
                     <Pressable style={[styles.button,{backgroundColor:'red'}]}
                         onPress={()=>{
-                            setModalVisible(true)
+                            if(selectedID !=null && selectedID!='')
+                            {
+                                setModalVisible(true)
+                            }
                         }}
                     ><Text style={styles.textoBoton}>Eliminar</Text></Pressable>
                 </View>
                 </View>
                 <Modal animationType="slide" visible={modalVisible} transparent={true} onRequestClose={()=>{setModalVisible(false)}}>
                     <View style={{width:wp('95%'),maxWidth:500,height:hp('45%'),backgroundColor:'white',alignSelf:'center',marginTop:hp('21%'),borderWidth:1,borderColor:'#ccc',display:'flex',alignItems:'center',justifyContent:'center',borderRadius:40,gap:20}}>
-                        <Text style={{textAlign:'center',fontSize:18}}>¿Estas seguro que deseas eliminar este Registro?</Text>
-                        <View style={{display:'flex',flexDirection:'row',gap:50}}>
-                            <Pressable style={{flex:1,backgroundColor:'green',maxWidth:125,minWidth:125,height:35,justifyContent:'center'}} onPress={()=>{setModalVisible(false)}}><Text style={{textAlign:'center',color:'white',fontSize:15}}>si</Text></Pressable>
-                            <Pressable style={{flex:1,backgroundColor:'red',maxWidth:125,minWidth:125,height:35, justifyContent:'center'}} onPress={()=>{setModalVisible(false)}}><Text style={{textAlign:'center', color:'white'}}>no</Text></Pressable>
+                        <View style={{display:apartadoEliminarRegistro,width:wp('95%'),maxWidth:500,alignItems:'center',gap:30}}>
+                            <Text style={styles.textoModal}>¿Estas seguro que deseas eliminar este Registro?</Text>
+                            <View style={{flexDirection:'row',gap:50}}>
+                                <Pressable style={{flex:1,backgroundColor:'gray',maxWidth:125,minWidth:125,height:35,justifyContent:'center',borderRadius:5}} 
+                                    
+                                    onPress={()=>{
+                                        eliminarCliente(selectedID);
+                                    }}
+                                
+                                ><Text style={{textAlign:'center',color:'white',fontSize:15}}>si</Text></Pressable>
+                                <Pressable style={{flex:1,backgroundColor:'gray',maxWidth:125,minWidth:125,height:35, justifyContent:'center',borderRadius:5}} onPress={()=>{setModalVisible(false)}}><Text style={{textAlign:'center', color:'white'}}>no</Text></Pressable>
+                            </View>
+                        </View>
+                        <View style={{ display:apartadoEnviadoExitosamente,flexDirection:'column',gap:35}}>
+                            <Text style={styles.textoModal}>Eliminado exitosamente</Text>
+                            <Image  style={{width:70,height:70,alignSelf:'center'}} source={require('../imagenes/checked.png')}></Image>
+                        </View>
+                        <View style={{ display:apartadoEliminadoFallo,flexDirection:'column',gap:35}}>
+                            <Text style={styles.textoModal}>No se pudo eliminar el registro</Text>
+                            <Image  style={{width:70,height:70,alignSelf:'center'}} source={require('../imagenes/warning.png')}></Image>
+                        </View>
+
+                        <View style={{ display:apartadoCargando,flexDirection:'column',gap:35}}>
+                            <Animated.Image
+                                style={{
+                                    transform: [{ rotate: rotacion }],
+                                    width: 100, // Ajustar dimensiones
+                                    height: 100,
+                                }}
+                                source={require("../imagenes/loading.png")}
+                            />
                         </View>
                     </View>
                 </Modal>
@@ -173,9 +285,9 @@ export const ListaClientes= ({navigation,route})=>{
 }
 
 /*Formulario de Nuevos Clientes*/
-export const NuevoCliente= ({navigation,route})=>{
+export const NuevoCliente= ({navigation,setRenderizado})=>{
+    //detonante del renderizado del componente listaClientes
     //genero
-    setRender= route.params;
     const [item,setItem]= useState([{label:'masculino',value:'m'},{label:'femenino',value:'f'},{label:'prefiero no responder',value:null}])
     const [open, setOpen]= useState(false);
     const [genero, setGenero]= useState(null);
@@ -232,7 +344,7 @@ export const NuevoCliente= ({navigation,route})=>{
                     setCliente(newCliente);
                     setTimeout(() => {
                         navigation.navigate('ListaClientes')
-                        setRender(true)
+                        setRenderizado(x=>!x)
                     }, 2000);
                 }
                 else
@@ -356,10 +468,6 @@ export const NuevoCliente= ({navigation,route})=>{
                                 {
                                     setColorBotonEnviar('green')
                                     enviarDatosCliente(cliente)
-                                    
-
-                                    
-                                    //navigation.navigate('ListaClientes');
                                 }
                                 else
                                 {
@@ -454,7 +562,7 @@ const styles = StyleSheet.create({
     form:{
         backgroundColor:'white',
         width:wp('70%'),
-        maxWidth:600,
+        minWidth:340,
         display:'flex',
         alignItems:'center',
         gap:10,
@@ -516,5 +624,8 @@ const styles = StyleSheet.create({
         borderWidth:1,
         borderColor:'gray',
         backgroundColor:'white'
-    }
+    },
+    textoModal:{
+        textAlign:'center',
+        fontSize:22}
 })

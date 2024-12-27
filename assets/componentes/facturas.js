@@ -1,12 +1,11 @@
-import { Text } from "react-native"
 
 
-export const FacturaPrincipal=()=>{
+export const FacturaPrincipal = () => {
+  
 
 
-    return(
+    return (
         <>
-            <Text>Hello World</Text>
         </>
-    )
-}
+    );
+};
