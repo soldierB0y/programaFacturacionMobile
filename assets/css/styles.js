@@ -113,7 +113,16 @@ const  styles = StyleSheet.create({
 
           }
         )
-      }
+      },
+      button:{
+        flex:1,
+        height:40,
+        maxHeight:40,
+        width:100,
+        display:'flex',
+        justifyContent:'center',
+        borderRadius:15
+    }
 })
 
 export default styles;

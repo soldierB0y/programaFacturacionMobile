@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react"
-import { Text,ScrollView,View,StyleSheet, Pressable,Image,TextInput, Modal} from "react-native"
+import { Text,ScrollView,View, Pressable,Image,TextInput, Modal} from "react-native"
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from "react-native-responsive-screen"
 import { createMaterialTopTabNavigator } from "@react-navigation/material-top-tabs"
 import DropDownPicker from "react-native-dropdown-picker"
 import { stylesTables } from "../css/styleTable";
 import { Animated, Easing } from "react-native";
+import { Loading } from "./loading";
+import { FormularioStyles } from "../css/formularioStyles"
 
 //URL de la api
 const urlApi='http://localhost:8000/'
@@ -67,16 +69,36 @@ export const ListaClientes= ({navigation,renderizado})=>{
 
     
 
-
+    const defaultInfoCliente={
+        IDCliente: null,
+        IDRNC: null,
+        nombreRepresentante: null,
+        tipoCliente: null,
+        sexo: null,
+        cedula: null,
+        empresa: null,
+        direccion: null,
+        balance: 0,
+        deuda: 0,
+        fechaCreacion:null,
+        fechaModificacion: null,
+        correo: null,
+        imagen: null,
+        montoTotalCompras: null,
+        descripcionModificacion:null,
+        telefono: null
+    } 
     const[searchValue, setSearchValue]= useState(null);
-    const [listaClientes,setListaclientes]= useState([{}]);
+    const [listaClientes,setListaclientes]= useState({});
     const [selectedID,setSelectedID]= useState(null);
     const [modalVisible,setModalVisible]=useState(false);
+    const [modalCliente,setModalCliente]= useState(false);
     const [render,setRender]=useState(false);
     const [apartadoEliminarRegistro,setApartadoEliminarRegistro]=useState('flex')
     const [apartadoEnviadoExitosamente,setApartadoEliminadoExitosamente]= useState('none')
     const [apartadoEliminadoFallo,setApartadoEliminadoFallo]= useState('none')
-    const [apartadoCargando, setApartadoCargando]=useState('none')
+    const [apartadoCargando, setApartadoCargando]=useState('none');
+    const [infoClienteSeleccionado,setInfoClienteSeleccionado]=useState(defaultInfoCliente);
     //animacion de carga
     const animacionLoading =new Animated.Value(0)
 
@@ -102,7 +124,7 @@ export const ListaClientes= ({navigation,renderizado})=>{
                 
             } catch (error) {
                 console.log('Error:'+error);
-                return [{}];
+                return {};
             }
 
         }
@@ -172,8 +194,25 @@ export const ListaClientes= ({navigation,renderizado})=>{
             )
         }
     }
-
-
+    
+    // al seleccionar un cliente si queremos visualizar su informacion es necesario tomar estos datos previamente antes de mostrarlo de eso se encarga esta funcion
+    function datosClienteSeleccionado(ClienteSeleccionado)
+    {
+        var value= listaClientes.filter(item=> item.IDCliente== ClienteSeleccionado);
+        setInfoClienteSeleccionado({...infoClienteSeleccionado,nombreRepresentante:value[0].nombreRepresentante,
+            sexo:value[0].sexo,
+            telefono:value[0].telefono,
+            correo:value[0].correo,
+            direccion:value[0].direccion,
+            cedula: value[0].cedula,
+            tipo:value[0].tipo,
+            montoTotalCompras:value[0].montoTotalCompras,
+            balance:value[0].balance,
+            deuda:value[0].deuda,
+            empresa:value[0].empresa
+        });
+        console.log([value,infoClienteSeleccionado])
+    }
 
     
     useEffect(() => {
@@ -204,94 +243,140 @@ export const ListaClientes= ({navigation,renderizado})=>{
   
     return (
         <>
-                <View style={{width:wp('100%'),display:'flex',alignItems:'center'}}>
-                <TextInput style={{marginLeft:wp('5%'),backgroundColor:'white',paddingLeft:20,borderWidth:0,fontSize:18, borderColor:'black',width:wp('90%'),maxWidth:450,height:40,alignSelf:'center',marginTop:20,marginBottom:10}} placeholder="nombre..." 
-                onChangeText={(e)=>{
+                {
+                    Object.getOwnPropertyNames(listaClientes).length > 0?
+                    <View>
+                        <View style={FormularioStyles.contenedorGeneral}>
+                        <TextInput style={FormularioStyles.layelFondo} placeholder="nombre..." 
+                        onChangeText={(e)=>{
 
-                    setSearchValue(e)
+                            setSearchValue(e)
 
-                }}></TextInput>
-                
-                <ScrollView style={stylesTables.contenedorTabla}>
-                    <View style={stylesTables.tablaContenedortitulares}><Text style={stylesTables.tablaTitulo}>ID</Text><Text style={stylesTables.tablaTitulo}>nombre</Text></View>
-                    {listaClientes.map(item=>(
+                        }}></TextInput>
+                        
+                        <ScrollView style={stylesTables.contenedorTabla}>
+                            <View style={stylesTables.tablaContenedortitulares}><Text style={stylesTables.tablaTitulo}>ID</Text><Text style={stylesTables.tablaTitulo}>nombre</Text></View>
+                            {listaClientes.map(item=>(
 
-                        <Pressable key={item.IDCliente}
-                            onPress={()=>{
-                               setSelectedID(item.IDCliente)
-                            }}
-                        >
-                            <View style={[stylesTables.contenedorTablaLinea,{backgroundColor: selectedID==item.IDCliente? '#ccc':'white'}]} key={item.IDCliente}>
-                                <Text style={[stylesTables.styleColumna,{color: selectedID==item.IDCliente? 'white':'black',userSelect:'none'}]}>{item.IDCliente}</Text>
-                                <Text style={[stylesTables.styleColumna,{color: selectedID==item.IDCliente? 'white':'black',userSelect:'none'}]}>{item.nombreRepresentante}</Text>
-                            </View>
-                        </Pressable>
-
-
-                    )
-
-                    )}
-                </ScrollView>
-                <View style={{display:'flex',flexDirection:'row',gap:10,marginTop:20}}>
-                    <Pressable style={[styles.button,{backgroundColor:'green'}]}><Text style={styles.textoBoton}
-                        onPress={()=>{navigation.navigate('NuevoCliente')}}
-                    >Crear</Text></Pressable>
-                    <Pressable style={[styles.button,{backgroundColor:'blue'}]}
-                        onPress={()=>{
-                            (
-                                async ()=>{
-                                    const AllClientes=  getClientes().then(x=>(x.filter(item=> item.IDCliente==selectedID)));
-                                    navigation.navigate('EditarCliente',{infoCliente: JSON.stringify(await AllClientes)})
-                                }
-                            )()
-                        }}
-                    ><Text style={styles.textoBoton}>Editar</Text></Pressable>
-                    <Pressable style={[styles.button,{backgroundColor:'red'}]}
-                        onPress={()=>{
-                            if(selectedID !=null && selectedID!='')
-                            {
-                                setModalVisible(true)
-                            }
-                        }}
-                    ><Text style={styles.textoBoton}>Eliminar</Text></Pressable>
-                </View>
-                </View>
-                <Modal animationType="slide" visible={modalVisible} transparent={true} onRequestClose={()=>{setModalVisible(false)}}>
-                    <View style={styles.ventanaEmergente}>
-                        <View style={{display:apartadoEliminarRegistro,width:wp('95%'),maxWidth:500,alignItems:'center',gap:30}}>
-                            <Text style={styles.textoModal}>¿Estas seguro que deseas eliminar este Registro?</Text>
-                            <View style={{flexDirection:'row',gap:50}}>
-                                <Pressable style={{flex:1,backgroundColor:'gray',maxWidth:125,minWidth:125,height:35,justifyContent:'center',borderRadius:5}} 
-                                    
+                                <Pressable key={item.IDCliente}
                                     onPress={()=>{
-                                        eliminarCliente(selectedID);
+                                    setSelectedID(item.IDCliente)
                                     }}
-                                
-                                ><Text style={{textAlign:'center',color:'white',fontSize:15}}>si</Text></Pressable>
-                                <Pressable style={{flex:1,backgroundColor:'gray',maxWidth:125,minWidth:125,height:35, justifyContent:'center',borderRadius:5}} onPress={()=>{setModalVisible(false)}}><Text style={{textAlign:'center', color:'white'}}>no</Text></Pressable>
-                            </View>
-                        </View>
-                        <View style={{ display:apartadoEnviadoExitosamente,flexDirection:'column',gap:35}}>
-                            <Text style={styles.textoModal}>Eliminado exitosamente</Text>
-                            <Image  style={{width:70,height:70,alignSelf:'center'}} source={require('../imagenes/bin.png')}></Image>
-                        </View>
-                        <View style={{ display:apartadoEliminadoFallo,flexDirection:'column',gap:35}}>
-                            <Text style={styles.textoModal}>No se pudo eliminar el registro</Text>
-                            <Image  style={{width:70,height:70,alignSelf:'center'}} source={require('../imagenes/warning.png')}></Image>
-                        </View>
+                                >
+                                    <View style={[stylesTables.contenedorTablaLinea,{backgroundColor: selectedID==item.IDCliente? '#ccc':'white'}]} key={item.IDCliente}>
+                                        <Text style={[stylesTables.styleColumna,{color: selectedID==item.IDCliente? 'white':'black',userSelect:'none'}]}>{item.IDCliente}</Text>
+                                        <Text style={[stylesTables.styleColumna,{color: selectedID==item.IDCliente? 'white':'black',userSelect:'none'}]}>{item.nombreRepresentante}</Text>
+                                    </View>
+                                </Pressable>
 
-                        <View style={{ display:apartadoCargando,flexDirection:'column',gap:35}}>
-                            <Animated.Image
-                                style={{
-                                    transform: [{ rotate: rotacion }],
-                                    width: 100, // Ajustar dimensiones
-                                    height: 100,
+
+                            )
+
+                            )}
+                        </ScrollView>
+                        <View style={FormularioStyles.contenedorBotones}>
+                            <Pressable style={[FormularioStyles.button,{backgroundColor:'green'}]}><Text style={FormularioStyles.textoBoton}
+                                onPress={()=>{navigation.navigate('NuevoCliente')}}
+                            >Crear</Text></Pressable>
+                            <Pressable style={[FormularioStyles.button,{backgroundColor:'blue'}]}
+                                onPress={()=>{
+                                    (
+                                        async ()=>{
+                                            const AllClientes=  getClientes().then(x=>(x.filter(item=> item.IDCliente==selectedID)));
+                                            navigation.navigate('EditarCliente',{infoCliente: JSON.stringify(await AllClientes)});
+                                        }
+                                    )()
                                 }}
-                                source={require("../imagenes/loading.png")}
-                            />
+                            ><Text style={FormularioStyles.textoBoton}>Editar</Text></Pressable>
+                            <Pressable style={[FormularioStyles.button,{backgroundColor:'red'}]}
+                                onPress={()=>{
+                                    if(selectedID !=null && selectedID!='')
+                                    {
+                                        setModalVisible(true)
+                                    }
+                                }}
+                            ><Text style={FormularioStyles.textoBoton}>Eliminar</Text></Pressable>
+                                            <Pressable style={[FormularioStyles.button,{backgroundColor:'#ccc'}]}
+                                onPress={()=>{
+                                    if(selectedID !=null && selectedID!='')
+                                    {
+                                        datosClienteSeleccionado(selectedID);
+                                        setModalCliente(true)
+                                    }
+                                }}
+                            ><Text style={FormularioStyles.textoBoton}>Info</Text></Pressable>
                         </View>
-                    </View>
-                </Modal>
+                        </View>
+                        <Modal animationType="slide" visible={modalVisible} transparent={true} onRequestClose={()=>{setModalVisible(false)}}>
+                            <View style={FormularioStyles.ventanaEmergente}>
+                                <View style={{display:apartadoEliminarRegistro,width:wp('95%'),maxWidth:500,alignItems:'center',gap:30}}>
+                                    <Text style={FormularioStyles.textoModal}>¿Estas seguro que deseas eliminar este Registro?</Text>
+                                    <View style={FormularioStyles.contenedorBotones}>
+                                        <Pressable style={{flex:1,backgroundColor:'gray',maxWidth:125,minWidth:125,height:35,justifyContent:'center',borderRadius:5}} 
+                                            
+                                            onPress={()=>{
+                                                eliminarCliente(selectedID);
+                                            }}
+                                        
+                                        ><Text style={{textAlign:'center',color:'white',fontSize:15}}>si</Text></Pressable>
+                                        <Pressable style={{flex:1,backgroundColor:'gray',maxWidth:125,minWidth:125,height:35, justifyContent:'center',borderRadius:5}} onPress={()=>{setModalVisible(false)}}><Text style={{textAlign:'center', color:'white'}}>no</Text></Pressable>
+                                    </View>
+                                </View>
+                                <View style={{ display:apartadoEnviadoExitosamente,flexDirection:'column',gap:35}}>
+                                    <Text style={FormularioStyles.textoModal}>Eliminado exitosamente</Text>
+                                    <Image  style={{width:70,height:70,alignSelf:'center'}} source={require('../imagenes/bin.png')}></Image>
+                                </View>
+                                <View style={{ display:apartadoEliminadoFallo,flexDirection:'column',gap:35}}>
+                                    <Text style={FormularioStyles.textoModal}>No se pudo eliminar el registro</Text>
+                                    <Image  style={{width:70,height:70,alignSelf:'center'}} source={require('../imagenes/warning.png')}></Image>
+                                </View>
+
+                                <View style={{ display:apartadoCargando,flexDirection:'column',gap:35}}>
+                                    <Animated.Image
+                                        style={{
+                                            transform: [{ rotate: rotacion }],
+                                            width: 100, // Ajustar dimensiones
+                                            height: 100,
+                                        }}
+                                        source={require("../imagenes/loading.png")}
+                                    />
+                                </View>
+                            </View>
+                        </Modal>
+                        <Modal animationType="slide" visible={modalCliente} transparent={true} onRequestClose={()=>{setModalVisible(false)}}>
+                            <View style={FormularioStyles.ventanaEmergente}>
+                                <View style={FormularioStyles.contenedorVentanaEmergente}>
+                                    <Image style={{width:150,height:150}} source={require('../imagenes/client.png')} ></Image>
+                                    <View style={{display:'flex',flexDirection:'column',gap:3}}>
+                                        <Text style={FormularioStyles.textoInfoModal}><Text style={FormularioStyles.textoBold}>nombre:</Text> {infoClienteSeleccionado.nombreRepresentante || 'ninguno'}</Text>
+                                        <Text style={FormularioStyles.textoInfoModal}><Text style={FormularioStyles.textoBold}>sexo</Text> {infoClienteSeleccionado.sexo || 'ninguno'}</Text>
+                                        <Text style={FormularioStyles.textoInfoModal}><Text style={FormularioStyles.textoBold}>telefono:</Text>  {infoClienteSeleccionado.telefono || 'ninguno'}</Text>
+                                        <Text style={FormularioStyles.textoInfoModal}><Text style={FormularioStyles.textoBold}>correo:</Text>  {infoClienteSeleccionado.correo || 'ninguno'}</Text>
+                                        <Text style={FormularioStyles.textoInfoModal}><Text style={FormularioStyles.textoBold}>direccion:</Text>  {infoClienteSeleccionado.direccion || 'ninguno'}</Text>
+                                        <Text style={FormularioStyles.textoInfoModal}><Text style={FormularioStyles.textoBold}>cedula:</Text>  {infoClienteSeleccionado.cedula || 'ninguno'}</Text>
+                                        <Text style={FormularioStyles.textoInfoModal}><Text style={FormularioStyles.textoBold}>tipo:</Text> {infoClienteSeleccionado.tipoCliente || 'ninguno'}</Text>
+                                        <Text style={FormularioStyles.textoInfoModal}> <Text style={FormularioStyles.textoBold}>total en compras:</Text> {infoClienteSeleccionado.montoTotalCompras || 0}</Text>
+                                        <Text style={FormularioStyles.textoInfoModal}><Text style={FormularioStyles.textoBold}>balance:</Text>  {infoClienteSeleccionado.balance || 0}</Text>
+                                        <Text style={FormularioStyles.textoInfoModal}><Text style={FormularioStyles.textoBold}>deudas:</Text> {infoClienteSeleccionado.deuda || 0}</Text>
+                                        <Text style={FormularioStyles.textoInfoModal}><Text style={FormularioStyles.textoBold}>empresa</Text> {infoClienteSeleccionado.empresa || 'ninguno'}</Text>
+                                    </View>
+                                </View>
+                                <Pressable
+                                    onPress={()=>{
+                                        setInfoClienteSeleccionado(defaultInfoCliente);
+                                        setModalCliente(false)
+                                    }}
+                                style={[FormularioStyles.button,{backgroundColor:'#ccc'}]}>
+                                        <Text style={FormularioStyles.textoBoton}>
+                                            Listo
+                                        </Text>
+                                </Pressable>
+                            </View>
+                        </Modal>
+                    </View>:
+                    <View><Loading funcionCliente={getClientes} setListaClientes={setListaclientes}/></View>
+                    
+                }
 
         </>
     )
@@ -305,13 +390,13 @@ export const NuevoCliente= ({navigation,setRenderizado})=>{
     const [open, setOpen]= useState(false);
     const [genero, setGenero]= useState(null);
     //visibilidad de los textoError
-    const [errorNombre,setErrorNombre]=useState(true)
-    const [errorGenero,setErrorGenero]=useState(true)
-    const [errorDireccion,setErrorDireccion]=useState(true)
-    const [errorTelefono,setErrorTelefono]=useState(true)
-    const [errorCorreo,setErrorCorreo]=useState(true)
-    const [enviarDatos,setEnviarDatos]=useState('Guardar Datos')
-    const [colorBotonEnviar,setColorBotonEnviar]=useState('green')
+    const [errorNombre,setErrorNombre]=useState(true);
+    const [errorGenero,setErrorGenero]=useState(true);
+    const [errorDireccion,setErrorDireccion]=useState(true);
+    const [errorTelefono,setErrorTelefono]=useState(true);
+    const [errorCorreo,setErrorCorreo]=useState(true);
+    const [enviarDatos,setEnviarDatos]=useState('Guardar Datos');
+    const [colorBotonEnviar,setColorBotonEnviar]=useState('green');
 
     //estructura de cliente
     const newCliente= {
@@ -320,19 +405,30 @@ export const NuevoCliente= ({navigation,setRenderizado})=>{
         telefono:'',
         correo:'',
         RNC:'',
-        genero:'',
-        empresa:''
+        empresa:'',
+        sexo:'',
+
     };
     //useState para asignar valores a cliente
     const [cliente,setCliente]=useState(
         newCliente
     )
 
+    useEffect(()=>{
+        if(cliente[0]!= undefined)
+        {
+            cliente.sexo= genero;
+            
+        }
+    },[genero])
+
+
     //funcion para enviar datos
     async function enviarDatosCliente(objCliente) {
-        setColorBotonEnviar('green')
-        setEnviarDatos('espere...')
+        setColorBotonEnviar('green');
+        setEnviarDatos('espere...');
         try {
+            console.log(objCliente);
             //console.log('objCliente es:',objCliente)
             const datos= await fetch(urlApi+'clientes',{
                 headers:{'Content-Type':'application/json'},
@@ -360,7 +456,7 @@ export const NuevoCliente= ({navigation,setRenderizado})=>{
                         navigation.navigate('ListaClientes')
                         setRenderizado(x=>!x)
                         setEnviarDatos('Guardar Datos');
-                    }, 2000);
+                    }, 1500);
                 }
                 else
                 {
@@ -378,11 +474,11 @@ export const NuevoCliente= ({navigation,setRenderizado})=>{
     return(
         <>
             <ScrollView>
-                <View style={styles.container}>
-                    <View style={styles.form}>
-                        <Text style={styles.title}>Crear Nuevo Cliente</Text>
-                        <View style={{display:'flex',justifyContent:'center',alignItems:'center',gap:10}}>
-                            <TextInput  style={styles.input} placeholder="nombre" autoComplete="off"
+                <View style={FormularioStyles.container}>
+                    <View style={FormularioStyles.form}>
+                        <Text style={FormularioStyles.title}>Crear Nuevo Cliente</Text>
+                        <View style={FormularioStyles.inputContainer}>
+                            <TextInput  style={FormularioStyles.input} placeholder="nombre" autoComplete="off"
                                 value={cliente.nombre}
                                 onChange={
                                     (e)=>{
@@ -394,7 +490,7 @@ export const NuevoCliente= ({navigation,setRenderizado})=>{
                                     }
                                 }
                             ></TextInput>
-                            <Text style={[styles.textoError,{display:errorNombre==true?'none':'flex'}]}>Debes completar tu nombre</Text>
+                            <Text style={[FormularioStyles.textoError,{display:errorNombre==true?'none':'flex'}]}>Debes completar tu nombre</Text>
                             {/*Usar un selectDropDown para el sexo desinstalar 
                             el paquete que tengo para eso
                             actualmente, no funciona correctamente */}
@@ -406,15 +502,15 @@ export const NuevoCliente= ({navigation,setRenderizado})=>{
                                 setValue={setGenero}
                                 setItems={setItem}
                                 placeholder="genero"
-                                style={{backgroundColor:'white', width:300}}
-                                containerStyle={{display:'flex',alignItems:'center'}}
-                                dropDownContainerStyle={{width:300}}
+                                style={FormularioStyles.dropDownPickerStyle}
+                                containerStyle={FormularioStyles.dropDownPickerContainerStyle}
+                                dropDownContainerStyle={FormularioStyles.dropDownContainerStyle}
 
-                                onChangeValue={()=>{cliente.genero=genero}}
+                                onChangeValue={()=>{cliente.sexo=genero}}
                             >
                             </DropDownPicker>
-                            <Text style={[styles.textoError,{display:errorGenero==true?'none':'flex'}]}>ingresa tu genero</Text>
-                            <TextInput style={styles.input} placeholder="direccion" autoComplete="off"
+                            <Text style={[FormularioStyles.textoError,{display:errorGenero==true?'none':'flex'}]}>ingresa tu genero</Text>
+                            <TextInput style={FormularioStyles.input} placeholder="direccion" autoComplete="off"
                                 value={cliente.direccion}
                                 onChange={
                                     (e)=>{
@@ -426,8 +522,8 @@ export const NuevoCliente= ({navigation,setRenderizado})=>{
                                     }
                                 }
                             ></TextInput>
-                            <Text style={[styles.textoError,{display:errorDireccion==true?'none':'flex'}]}>Debes ingresar  tu direccion</Text>
-                            <TextInput style={styles.input} keyboardType="numeric" placeholder="telefono"
+                            <Text style={[FormularioStyles.textoError,{display:errorDireccion==true?'none':'flex'}]}>Debes ingresar  tu direccion</Text>
+                            <TextInput style={FormularioStyles.input} keyboardType="numeric" placeholder="telefono"
                                 value={cliente.telefono}
                                 onChange={
                                     (e)=>{
@@ -439,8 +535,8 @@ export const NuevoCliente= ({navigation,setRenderizado})=>{
                                     }
                                 }
                             ></TextInput>
-                            <Text style={[styles.textoError,{display:errorCorreo==true?'none':'flex'}]}>Debes ingresar tu telefono</Text>
-                            <TextInput style={styles.input} placeholder="correo"
+                            <Text style={[FormularioStyles.textoError,{display:errorTelefono==true?'none':'flex'}]}>Debes ingresar tu telefono</Text>
+                            <TextInput style={FormularioStyles.input} placeholder="correo"
                                 value={cliente.correo}
                                 onChange={
                                     (e)=>{
@@ -452,8 +548,8 @@ export const NuevoCliente= ({navigation,setRenderizado})=>{
                                     }
                                 }
                             ></TextInput>
-                            <Text style={[styles.textoError,{display:'none'}]}>Debes ingresar tu correo</Text>
-                            <TextInput style={styles.input} keyboardType="numeric" placeholder="RNC (opcional)"
+                            <Text style={[FormularioStyles.textoError,{display:errorCorreo==true?'none':'flex'}]}>Debes ingresar tu correo</Text>
+                            <TextInput style={FormularioStyles.input} keyboardType="numeric" placeholder="RNC (opcional)"
                                 
                                 value={cliente.RNC}
                                 onChange={
@@ -465,7 +561,7 @@ export const NuevoCliente= ({navigation,setRenderizado})=>{
                                 }
                             ></TextInput> 
                             
-                            <TextInput style={styles.input} placeholder="empresa (opcional)"
+                            <TextInput style={FormularioStyles.input} placeholder="empresa (opcional)"
                                 value={cliente.empresa}
                                 onChange={
                                     (e)=>{
@@ -508,9 +604,9 @@ export const NuevoCliente= ({navigation,setRenderizado})=>{
                                 }
                             }}
                         
-                        style={[styles.botonCliente,{backgroundColor:colorBotonEnviar}]}>
+                        style={[FormularioStyles.botonCliente,{backgroundColor:colorBotonEnviar}]}>
                             
-                        <Text style={styles.textoBoton}>{enviarDatos}</Text></Pressable>
+                        <Text style={FormularioStyles.textoBoton}>{enviarDatos}</Text></Pressable>
                     </View>
                 </View>
             </ScrollView>
@@ -528,8 +624,8 @@ export const EditarCliente=({navigation,setRenderizado,route})=>{
             telefono:'',
             correo:'',
             RNC:'',
-            genero:'',
-            empresa:''
+            empresa:'',
+            sexo:''
         };
 
     const [parametros, setParametros]= useState(route.params);
@@ -544,25 +640,19 @@ export const EditarCliente=({navigation,setRenderizado,route})=>{
 
     },[route])
 
-    useEffect(()=>{
-        if(parametros != undefined && parametros != null)
-        {
-                var value=JSON.parse(parametros.infoCliente);
-                setCliente({...cliente,nombre: value[0].nombreRepresentante,direccion:value[0].direccion,telefono:value[0].telefono,correo:value[0].correo,IDCliente:value[0].IDCliente})
-        }
-    },[parametros])
 
-    useEffect(()=>{
-        if(cliente[0]!= undefined)
-        {
 
-            console.log(cliente[0].nombreRepresentante);
-        }
-    },[cliente])
+
+
+
 
     const [item,setItem]= useState([{label:'masculino',value:'m'},{label:'femenino',value:'f'},{label:'prefiero no responder',value:null}])
     const [open, setOpen]= useState(false);
     const [genero, setGenero]= useState(null);
+
+
+
+
     //visibilidad de los textoError
     const [errorNombre,setErrorNombre]=useState(true)
     const [errorGenero,setErrorGenero]=useState(true)
@@ -572,7 +662,22 @@ export const EditarCliente=({navigation,setRenderizado,route})=>{
     const [enviarDatos,setEnviarDatos]=useState('Guardar Datos')
     const [colorBotonEnviar,setColorBotonEnviar]=useState('blue')
 
- 
+
+
+    
+    useEffect(()=>{
+        if(parametros != undefined && parametros != null)
+        {
+                var value=JSON.parse(parametros.infoCliente);
+                (async()=>{
+                    setCliente({...cliente,nombre: value[0].nombreRepresentante,direccion:value[0].direccion,telefono:value[0].telefono,correo:value[0].correo,IDCliente:value[0].IDCliente,sexo:value[0].sexo})              
+                
+                    setGenero(value[0].sexo);
+                
+                }
+            )()
+        }
+    },[parametros])
 
     //funcion para enviar datos
     async function enviarDatosCliente(objCliente) {
@@ -607,7 +712,7 @@ export const EditarCliente=({navigation,setRenderizado,route})=>{
                         navigation.navigate('ListaClientes')
                         setRenderizado(x=>!x)
                         setEnviarDatos('Guardar Datos');
-                    }, 2000);
+                    }, 1500);
                 }
                 else
                 {
@@ -626,11 +731,11 @@ export const EditarCliente=({navigation,setRenderizado,route})=>{
         <>
             <ScrollView>
 
-                <View style={styles.container}>
-                    <View style={styles.form}>
-                        <Text style={styles.title}>Modificar Cliente</Text>
-                        <View style={{display:'flex',justifyContent:'center',alignItems:'center',gap:10}}>
-                            <TextInput  style={styles.input} placeholder="nombre" autoComplete="off"
+                <View style={FormularioStyles.container}>
+                    <View style={FormularioStyles.form}>
+                        <Text style={FormularioStyles.title}>Modificar Cliente</Text>
+                        <View style={FormularioStyles.inputContainer}>
+                            <TextInput  style={FormularioStyles.input} placeholder="nombre" autoComplete="off"
                                 value={cliente.nombre}
                                 onChange={
                                     (e)=>{
@@ -642,7 +747,7 @@ export const EditarCliente=({navigation,setRenderizado,route})=>{
                                     }
                                 }
                             ></TextInput>
-                            <Text style={[styles.textoError,{display:errorNombre==true?'none':'flex'}]}>Debes completar tu nombre</Text>
+                            <Text style={[FormularioStyles.textoError,{display:errorNombre==true?'none':'flex'}]}>Debes completar tu nombre</Text>
                             {/*Usar un selectDropDown para el sexo desinstalar 
                             el paquete que tengo para eso
                             actualmente, no funciona correctamente */}
@@ -654,15 +759,15 @@ export const EditarCliente=({navigation,setRenderizado,route})=>{
                                 setValue={setGenero}
                                 setItems={setItem}
                                 placeholder="genero"
-                                style={{backgroundColor:'white', width:300}}
-                                containerStyle={{display:'flex',alignItems:'center'}}
-                                dropDownContainerStyle={{width:300}}
+                                style={FormularioStyles.dropDownPickerStyle}
+                                containerStyle={FormularioStyles.dropDownPickerContainerStyle}
+                                dropDownContainerStyle={FormularioStyles.dropDownContainerStyle}
 
-                                onChangeValue={()=>{cliente.genero=genero}}
+                                onChangeValue={()=>{cliente.sexo=genero}}
                             >
                             </DropDownPicker>
-                            <Text style={[styles.textoError,{display:errorGenero==true?'none':'flex'}]}>ingresa tu genero</Text>
-                            <TextInput style={styles.input} placeholder="direccion" autoComplete="off"
+                            <Text style={[FormularioStyles.textoError,{display:errorGenero==true?'none':'flex'}]}>ingresa tu genero</Text>
+                            <TextInput style={FormularioStyles.input} placeholder="direccion" autoComplete="off"
                                 value={cliente.direccion}
                                 onChange={
                                     (e)=>{
@@ -674,8 +779,8 @@ export const EditarCliente=({navigation,setRenderizado,route})=>{
                                     }
                                 }
                             ></TextInput>
-                            <Text style={[styles.textoError,{display:errorDireccion==true?'none':'flex'}]}>Debes ingresar  tu direccion</Text>
-                            <TextInput style={styles.input} keyboardType="numeric" placeholder="telefono"
+                            <Text style={[FormularioStyles.textoError,{display:errorDireccion==true?'none':'flex'}]}>Debes ingresar  tu direccion</Text>
+                            <TextInput style={FormularioStyles.input} keyboardType="numeric" placeholder="telefono"
                                 value={cliente.telefono}
                                 onChange={
                                     (e)=>{
@@ -687,8 +792,8 @@ export const EditarCliente=({navigation,setRenderizado,route})=>{
                                     }
                                 }
                             ></TextInput>
-                            <Text style={[styles.textoError,{display:errorCorreo==true?'none':'flex'}]}>Debes ingresar tu telefono</Text>
-                            <TextInput style={styles.input} placeholder="correo"
+                            <Text style={[FormularioStyles.textoError,{display:errorCorreo==true?'none':'flex'}]}>Debes ingresar tu telefono</Text>
+                            <TextInput style={FormularioStyles.input} placeholder="correo"
                                 value={cliente.correo}
                                 onChange={
                                     (e)=>{
@@ -700,8 +805,8 @@ export const EditarCliente=({navigation,setRenderizado,route})=>{
                                     }
                                 }
                             ></TextInput>
-                            <Text style={[styles.textoError,{display:'none'}]}>Debes ingresar tu correo</Text>
-                            <TextInput style={styles.input} keyboardType="numeric" placeholder="RNC (opcional)"
+                            <Text style={[FormularioStyles.textoError,{display:'none'}]}>Debes ingresar tu correo</Text>
+                            <TextInput style={FormularioStyles.input} keyboardType="numeric" placeholder="RNC (opcional)"
                                 
                                 value={cliente.RNC}
                                 onChange={
@@ -713,7 +818,7 @@ export const EditarCliente=({navigation,setRenderizado,route})=>{
                                 }
                             ></TextInput> 
                             
-                            <TextInput style={styles.input} placeholder="empresa (opcional)"
+                            <TextInput style={FormularioStyles.input} placeholder="empresa (opcional)"
                                 value={cliente.empresa}
                                 onChange={
                                     (e)=>{
@@ -756,9 +861,9 @@ export const EditarCliente=({navigation,setRenderizado,route})=>{
                                 }
                             }}
                         
-                        style={[styles.botonCliente,{backgroundColor:colorBotonEnviar}]}>
+                        style={[FormularioStyles.botonCliente,{backgroundColor:colorBotonEnviar}]}>
                             
-                        <Text style={[styles.textoBoton]}>{enviarDatos}</Text></Pressable>
+                        <Text style={[FormularioStyles.textoBoton]}>{enviarDatos}</Text></Pressable>
                     </View>
                 </View>
             </ScrollView>
@@ -771,92 +876,3 @@ export const EditarCliente=({navigation,setRenderizado,route})=>{
 
 
 /*estilos*/
-const styles = StyleSheet.create({
-
-    form:{
-        backgroundColor:'white',
-        width:wp('70%'),
-        minWidth:340,
-        display:'flex',
-        alignItems:'center',
-        gap:10,
-        paddingTop:30,
-        paddingBottom:30,
-        borderRadius:40,
-        marginBottom:40
-    },
-    textoError:{
-        color:'red'
-    },
-    button:{
-        flex:1,
-        height:40,
-        width:150,
-        display:'flex',
-        justifyContent:'center',
-        borderRadius:15
-    },
-    container:{
-        width:wp('100%'),
-        height:'auto',
-        backgroundColor:'whiteSmoke',
-        display:'flex',
-        alignItems:'center',
-        justifyContent:'flex-start',
-        paddingTop:50
-        ,
-        gap:20
-    },
-    botonCliente:
-    {
-        width:200,
-        height:40,
-        borderRadius:20,
-        display:'flex',
-        alignItems:'center',
-        justifyContent:'center'
-    },
-    textoBoton:{
-
-        textAlign:'center',
-        fontSize:17,
-        fontWeight:700,
-        color:'white',
-        userSelect:'none'
-    },
-    title:{
-    
-        textAlign:'center',
-        fontSize:20,
-        fontWeight:790
-    },
-    input:{
-        width:300,
-        borderRadius:10,
-        height:40,
-        paddingLeft:10,
-        borderWidth:1,
-        borderColor:'gray',
-        backgroundColor:'white'
-    },
-    textoModal:{
-        textAlign:'center',
-        fontSize:22},
-    
-    ventanaEmergente:{
-        
-        width:wp('95%'),
-        maxWidth:500,
-        height:hp('45%'),
-        backgroundColor:'white',
-        alignSelf:'center',
-        marginTop:hp('21%'),
-        borderWidth:1,
-        borderColor:'#ccc',
-        display:'flex',
-        alignItems:'center',
-        justifyContent:'center',
-        borderRadius:40,
-        gap:20
-    }
-})

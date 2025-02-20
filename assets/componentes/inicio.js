@@ -7,14 +7,17 @@ import { Clientes } from './clientes';
 import { Inventario, RegistrosInventario } from './inventario';
 import { NavigationContainer } from "@react-navigation/native";
 import { FacturaPrincipal } from "./facturas";
+import { Articulos} from "./articulos";
+import { TextInput } from "react-native-web";
+import { FormularioStyles } from "../css/formularioStyles";
+import CardInfoComponente from "./CardInfoComponente";
+
 
 
 const Drawer= createDrawerNavigator();
 
 
 export  const Menu= ({navigation})=>{
-
-    navigation.navigate('Clientes')
 
     return(
         <>
@@ -47,6 +50,7 @@ export  const Menu= ({navigation})=>{
                         <Drawer.Screen name="Ordenes" component={RegistrosInventario}></Drawer.Screen>
                         <Drawer.Screen name="Clientes" component={Clientes}></Drawer.Screen>
                         <Drawer.Screen name="FacturaPrincipal" component={FacturaPrincipal} options={{title:'Facturas'}}></Drawer.Screen>
+                        <Drawer.Screen name="Articulos" component={Articulos}></Drawer.Screen>
                     </Drawer.Navigator>
 
         </>
@@ -54,10 +58,15 @@ export  const Menu= ({navigation})=>{
 }
 
 
-export const Inicio= ()=>{
+export const Inicio= ({navigation})=>{
+
+    //navigation.navigate('Articulos');
     return(
         <>
-        
+            <Text style={[FormularioStyles.title,{fontSize:30,padding:25}]}>Mi Panel</Text>
+            <View style={[styles.Body,{flexDirection:'column',alignItems:'center'}]}>
+                <CardInfoComponente titulo='Cantidad de Facturas'/>
+            </View>
         </>
     )
 }
